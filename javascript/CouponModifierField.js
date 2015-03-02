@@ -1,5 +1,12 @@
 (function($) {
 	$(document).ready(function() {
+		$(document).keydown(function(event){
+			if(event.keyCode == 13) {
+				event.preventDefault();
+				return false;
+			}
+		});
+		
 		$('#apply-coupon-js').live('click', function() {
 
 			$('.order-form').entwine('sws').updateCart();
@@ -24,6 +31,11 @@
 					$('.order-form').entwine('sws').updateCart();
 				}
 			});
+		});
+		$("#OrderForm_OrderForm_CouponCode").keyup(function(event){
+			if(event.keyCode == 13){
+				$("#apply-coupon-js").click();					
+			}
 		});
 	});
 })(jQuery);

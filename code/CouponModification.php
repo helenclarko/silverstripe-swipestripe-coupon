@@ -26,7 +26,13 @@ class CouponModification extends Modification {
 			->first();
 
 		if ($coupon && $coupon->exists()) {
-
+			 
+			$curcode = Convert::raw2sql($order->CouponCode);
+			$currentCoupon = Coupon::get()->where("\"Code\" = '$curcode' AND \"Expiry\" >= '$date'")->first();
+			if($currentCoupon && $currentCoupon->exists()) {
+				$coupon = $currentCoupon;  //If current coupon exist replace it with the new one.
+			}
+			
 			//Generate the Modification
 			$mod = new CouponModification();
 			$mod->Price = $coupon->Amount($order)->getAmount();
@@ -42,12 +48,12 @@ class CouponModification extends Modification {
 	public function getFormFields() {
 
 		$fields = new FieldList();
-
 		$coupon = $this->Coupon();
+		
 		if ($coupon && $coupon->exists()) {
 
-			$field = CouponModifierField::create($this, $coupon->Label(), $coupon->Code)
-				->setAmount($coupon->Price($this->Order()));
+				$field = CouponModifierField::create($this, $coupon->Label(), $coupon->Code)
+					->setAmount($coupon->Price($this->Order()));
 
 			$fields->push($field);
 		}

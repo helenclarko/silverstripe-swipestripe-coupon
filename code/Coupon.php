@@ -22,8 +22,14 @@ class Coupon extends DataObject implements PermissionProvider {
 	 * 
 	 * @var unknown_type
 	 */
+	public $errorTitle = ''; // Custom Error notice
+	 
 	private static $has_one = array(
 		'ShopConfig' => 'ShopConfig'
+	);
+	
+	public static $many_many = array(
+		'DiscountProducts' => 'Product'
 	);
 
 	private static $summary_fields = array(
@@ -66,19 +72,42 @@ class Coupon extends DataObject implements PermissionProvider {
 	 * @return FieldSet
 	 */
 	public function getCMSFields() {
+	
+		$fields = new FieldList(new TabSet('Root'));
 
-		return new FieldList(
-			$rootTab = new TabSet('Root',
-				$tabMain = new Tab('CouponRate',
-					TextField::create('Title', _t('Coupon.TITLE', 'Title')),
-					TextField::create('Code', _t('Coupon.CODE', 'Code')),
-					NumericField::create('Discount', _t('Coupon.DISCOUNT', 'Coupon discount'))
-						->setRightTitle('As a percentage (%)'),
-					DateField::create('Expiry')
-						->setConfig('showcalendar', true)
-				)
-			)
-		);
+		$fields->addFieldToTab("Root.CouponRate", New TextField('Title', _t('Coupon.TITLE', 'Title')));
+		$fields->addFieldToTab("Root.CouponRate", New TextField('Code', _t('Coupon.CODE', 'Code')));
+
+		$discount =	New NumericField('Discount', _t('Coupon.DISCOUNT', 'Coupon discount'));
+		$discount->setRightTitle('As a % amount');
+		$fields->addFieldToTab('Root.CouponRate', $discount);
+						
+		$date = New DateField('Expiry');
+		$date->setConfig('showcalendar', true);
+		$fields->addFieldToTab('Root.CouponRate', $date);
+		
+		If($this->ID) { 
+			$gridFieldComplex = GridFieldConfig::create()->addComponents(
+			  new GridFieldToolbarHeader(),
+			  new GridFieldSortableHeader(),
+			  new GridFieldDataColumns(),
+			  new GridFieldManyRelationHandler(),
+			  new GridFieldPaginator(10),
+			  new GridFieldEditButton(),
+			  new GridFieldDeleteAction(),
+			  new GridFieldDetailForm()
+			);
+			
+			$tablefield = new GridField(
+				'DiscountProducts',
+				'Discount Products:',
+				$this->DiscountProducts(),
+				$gridFieldComplex
+			);
+			$fields->addFieldToTab('Root.CouponRate', $tablefield);
+		}
+		
+		return $fields;
 	}
 	
 	/**
@@ -88,7 +117,13 @@ class Coupon extends DataObject implements PermissionProvider {
 	 * @return String
 	 */
 	public function Label() {
-		return $this->Title . ' ' . $this->SummaryOfDiscount() . ' discount';
+		global $errorTitle;
+		
+		if ($errorTitle != "") { //check to see if there is a custom error notice.
+			return $errorTitle;
+		} else { 
+			return $this->Title . ' ' . $this->SummaryOfDiscount() . ' discount';
+		}
 	}
 	
 	/**
@@ -103,23 +138,44 @@ class Coupon extends DataObject implements PermissionProvider {
 	public function Amount($order) {
 
 		// TODO: Multi currency
-
 		$shopConfig = ShopConfig::current_shop_config();
-
 		$amount = new Price();
 		$amount->setCurrency($shopConfig->BaseCurrency);
 		$amount->setSymbol($shopConfig->BaseCurrencySymbol);
 
 		$total = $order->SubTotal()->getAmount();
 		$mods = $order->TotalModifications();
-
+		
 		if ($mods && $mods->exists()) foreach ($mods as $mod) {
 			if ($mod->ClassName != 'CouponModification') {
 				$total += $mod->Amount()->getAmount();
 			}
 		}
-		$amount->setAmount(- ($total * ($this->Discount / 100)));
+		$DiscountProducts = $this->DiscountProducts();
+		$totalDiscountPrice = 0; // reset total discount
+		if ($DiscountProducts && $DiscountProducts->exists()) foreach ($DiscountProducts as $DiscountProduct) { // run through loop on discounted products
+			$IDS = $DiscountProduct->ID;  
+			$items = $order->Items();
+			if ($items && $items->exists()) foreach ($items as $item) { //run through loop of items
+				if ($item->ProductID == $IDS) { // if the product equals the discounted product
+					$totalDiscountPrice += ($item->Quantity * $item->Price); // Adds the discounted items prices together
+				}
+			}
+			
+		}
+			
 
+	
+
+		$discountAmount = $totalDiscountPrice * ($this->Discount / 100); // Convert to percentage
+		$amount->setAmount(- $discountAmount); // Set the discount
+		
+		if ($totalDiscountPrice == 0) { //If there is no discount but voucher was accepted
+			global $errorTitle;
+			$errorTitle = '<font color=red>This coupon is not valid with these items</font>'; //display this error
+			$this->Discount = 0;
+
+		}
 		return $amount;
 	}
 

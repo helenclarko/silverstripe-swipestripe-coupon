@@ -7,9 +7,13 @@ SwipeStripe
 ## Requirements
 * SilverStripe 3.1.*
 * SwipeStripe 2.1.*
+* GridFieldManyRelationshipHandler https://git.simon.geek.nz/simon_w/gridfieldrelationhandler
 
 ## Documentation
-Coupons for discounts, create coupons with different discounts that expire on a certain date. Customers enter a coupon at checkout 
+Coupons for discounts, create coupons with different discounts that expire on a certain date. Customers enter a coupon at checkout.
+Coupon is applied on the product (not to the total price), multiple products can be assigned to one code.
+The last code to be entered is the code which is used.
+
 
 ## Installation Instructions
 1. Place this directory in the root of your SilverStripe installation, rename the folder 'swipestripe-coupon'.
