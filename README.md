@@ -7,7 +7,7 @@ SwipeStripe
 ## Requirements
 * SilverStripe 3.1.*
 * SwipeStripe 2.1.*
-* GridFieldManyRelationshipHandler https://git.simon.geek.nz/simon_w/gridfieldrelationhandler
+* GridFieldManyRelationshipHandler https://github.com/arillo/silverstripe-GridFieldRelationHandler
 
 ## Documentation
 Coupons for discounts, create coupons with different discounts that expire on a certain date. Customers enter a coupon at checkout.
