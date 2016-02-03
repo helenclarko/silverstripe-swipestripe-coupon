@@ -16,7 +16,7 @@
 		"silverstripe/framework": "~3.1",
 		"silverstripe/cms": "~3.1",
 		"swipestripe/swipestripe": "2.1.*",
-		"arillo/silverstripe-GridFieldRelationHandler": "*"
+		"arillo/gridfieldrelationhandler": "*"
 	},
 	"support": 
 	{
